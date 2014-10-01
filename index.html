@@ -1,0 +1,473 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+    <title>Facebook Application Permission Game</title>
+	<script type="text/javascript" src="js/phaser.min.js"></script>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>	<script type="text/javascript" src="js/jquery-1.8.3.js"></script> <!--Load jQuery-->
+	<script type="text/javascript" src="js/jquery-ui-1.9.2.custom.js"></script>
+	<script type="text/javascript" src="js/handlebars-1.0.rc.1.js"></script>
+	<script type="text/javascript" src="js/fbdata.js"></script>
+	<script type="text/javascript" src="js/apps.js"></script>
+	<!--Load Handlebars (for templates)-->
+
+    <style type="text/css">
+        body
+	{
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">        userData = {};
+        var plength =0;
+        var currentApp;
+	var app=1;
+	var acart;
+	var dcart;
+	var scanner;
+	var player;
+	var spaceBar;
+	var platforms;
+	var cursors;
+	var permission;
+	var stars;
+	var ground;
+	var wall;
+	var aScore = 0;
+	var dScore = 0;
+	var aScoreText;
+	var dScoreText;
+	var p=1;
+	var al; 
+	var de; 
+	var appDev;
+	var aFlag = new Boolean(false);
+	var desc;
+	var grnd1;
+	var grnd2;
+	var rect;
+	var grp1;
+	var dpy=0;
+	var dpx=0;
+	var appTitle;
+	var appIcon;
+	var gameStart;
+	var startTextHint;
+	var startText;
+	var pIncart;
+	var py=0;
+	var px=0;
+	var grp;
+	
+	getUserFBData();
+        var game = new Phaser.Game(1300, 700, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+        game.apps = getAppPermissionData();
+	
+        function preload()
+	{
+		game.load.image('bg', 'assets/bg.png');
+		game.load.image('bg1', 'assets/bg1.png');		game.load.image('circle', 'assets/circle.png');
+		game.load.image('grnd', 'assets/ground.png');		game.load.image('board', 'assets/message.png');
+		game.load.image('star', 'assets/star.png');
+		game.load.image('diamond', 'assets/diamond.png');		game.load.image('ball','assets/ball.png');
+		game.load.image('wall','assets/wall.png');
+		game.load.spritesheet('dude', 'assets/sec_guy.png');		game.load.spritesheet('appDev','Sprites/appDev.png',65,72);
+		game.load.image('scanner', 'Sprites/scannercopy1.png');
+		game.load.image('cart', 'Sprites/cart.png');
+		game.load.image('a', 'Sprites/allowed_.png');    
+		game.load.image('d', 'Sprites/denied_.png');
+		game.load.image('rect', 'Sprites/rect.png');
+		game.load.image('instructions', 'assets/instructions.png');
+	 
+		for (var a in game.apps)
+		{
+			//code
+			game.load.image(game.apps[a].name,game.apps[a].img);
+			for(var i in game.apps[a].permissions)
+			{
+				game.load.image(game.apps[a].permissions[i].name,'imgs/perms/'+ game.apps[a].permissions[i].name + '.png', 15,15);
+	
+			}
+		}
+		currentApp = game.apps[app.toString()];
+		plength = currentApp.plength;
+
+	}
+
+	function create()
+	{
+	
+		game.physics.startSystem(Phaser.Physics.ARCADE);
+	    
+		var bg = game.add.sprite(0, 0, 'bg');
+		bg.scale.setTo(4.5, 2);
+		appIcon =game.add.sprite(230,15,game.apps[app.toString()].name);
+		appIcon.scale.x -=0.3;
+		appIcon.scale.y -=0.3;
+		appTitle = game.add.text(300,30,currentApp.name + " Application",{ font: 'bold 16px Arial', fill: '#ffffff' , wordWrap:'true', wordWrapWidth: '300', align: 'center'});
+	     		acart = game.add.sprite(game.world.width - 260,game.world.height -550,'cart');
+		game.physics.arcade.enable(acart);
+		acart.enableBody = true;
+		acart.body.immovable = true;
+		acart.scale.x -= 0.5;
+		acart.scale.y -= 0.5;
+		al = game.add.sprite(135,250,'a');
+		al.scale.x -= 0.35;
+		al.scale.y -= 0.4;
+		acart.addChild(al);
+	    
+		dcart = game.add.sprite(game.world.width - 260,game.world.height -240,'cart');
+		game.physics.arcade.enable(dcart);
+		dcart.enableBody = true;
+		dcart.body.immovable = true;
+		dcart.scale.x -= 0.5;
+		dcart.scale.y -= 0.5;
+		de = game.add.sprite(135,245,'d');
+		de.scale.x -= 0.2;
+		de.scale.y -= 0.35;    
+		dcart.addChild(de);
+	    		scanner = game.add.sprite(0,game.world.height -560,'scanner');
+		//scanner.scale.x += 0.6;
+		//scanner.scale.x += 0.4;
+		rect = game.add.sprite(235, 45,'rect');
+		rect.visible = false;
+		rect.scale.x +=0.45;
+		rect.scale.y +=0.22;
+		scanner.addChild(rect);
+		desc = game.add.text(280, 200, "", { font: 'bold 12px Arial', fill: '#000000' , wordWrap:'true', wordWrapWidth: '175', align: 'center'});
+		ground = game.add.sprite(0, game.world.height-85 , 'grnd'); //create(0, game.world.height - 64, 'ground');		ground.visible = false;
+		ground.scale.x +=0.2;
+		game.physics.arcade.enable(ground);	    
+		//  Scale it to fit the width of the game (the original sprite is 400x32 in size)		ground.enableBody = true;
+		ground.body.immovable = true;
+		ground.scale.setTo(2, 2);
+		//  This stops it from falling away when you jump on it
+		
+		wall = game.add.sprite(game.world.width, 0 , 'wall'); //create(0, game.world.height - 64, 'ground');
+	    
+		game.physics.arcade.enable(wall);
+	    
+		//  Scale it to fit the width of the game (the original sprite is 400x32 in size)
+		wall.enableBody = true;
+		wall.body.immovable = true;
+		wall.scale.setTo(2, 4);	    
+	    
+		player = game.add.sprite(300, game.world.height - 300, 'dude');		player.scale.x -= 0.25;
+		player.scale.y -= 0.2;
+
+		game.physics.arcade.enable(player);
+		player.body.bounce.y = 0.2;	    
+		player.body.gravity.y = 450;	        //player.body.immovable = true;
+		player.body.collideWorldBounds = true;		permission = game.add.sprite(0, game.world.height - 378,currentApp.permissions['p'+p.toString()].name);
+		permission.scale.x -= 0.5;
+		permission.scale.y -= 0.5;
+		game.physics.arcade.enable(permission);
+		permission.enableBody = true;
+		permission.inputEnabled=true; 
+                permission.input.useHandCursor = true; //if you want a hand cursor  
+		p++;
+		aScoreText = game.add.text(1050, 10, 'Allowed: 0', { font: 'bold 18px Arial', fill: '#33CC33' });
+		dScoreText = game.add.text(1050, 32, 'Denied: 0', { font: 'bold 18px Arial', fill: '#FF3030' });
+		allowed = game.add.text(570, 150, 'Allowed', { font: 'normal 17px Arial', fill: '#FFFFFF' , align: 'center'});
+		denied = game.add.text(570, 150, 'Denied', { font: 'normal 17px Arial', fill: '#FFFFFF', align: 'center' });
+		allowed.visible = false;
+		denied.visible = false;
+		cursors = game.input.keyboard.createCursorKeys();	    
+		var inst =game.add.sprite(40,10,'instructions');
+		inst.scale.x -=0.2;
+		inst.scale.y -=0.2;		gameStart= game.add.sprite(0, 0, 'bg');
+		startText = game.add.text(550, 250, 'Start Game', { font: 'normal 30px Arial', fill: '#FFFFFF', align: 'center' });
+		startTextHint = game.add.text(550, 290, '        Click to begin', { font: 'normal 15px Arial', fill: '#FFFFFF', align: 'center' });  
+		gameStart.scale.setTo(4.5, 2);
+		gameStart.inputEnabled = true;
+		gameStart.input.useHandCursor = true;
+		gameStart.events.onInputDown.add(beginGame, this);
+
+	}
+
+	function update()
+	{
+
+		game.physics.arcade.collide(player, ground);
+
+		if (permission.exists == true)
+		{
+			if(permission.body.position.x > 70 && permission.body.position.x < 270)
+			{
+		
+				permission.body.position.x = 240;
+				permission.body.position.y = 195;
+				permission.body.velocity.x = 0;
+				rect.visible = true;
+				if (permission.scale.x>0.4)
+				{
+					permission.scale.x -=0.1;
+					permission.scale.y -=0.1;
+				}
+				if (userData[currentApp.permissions['p'+(p-1).toString()].name])
+				{
+
+					desc.text = currentApp.permissions['p'+(p-1).toString()].description +' i.e. \n'+ userData[currentApp.permissions['p'+(p-1).toString()].name]; 
+				   
+				}
+				else
+				        desc.text = currentApp.permissions['p'+(p-1).toString()].description;
+		
+		
+			}
+			else if (permission.body.position.x > 1000)
+			{
+			//code
+			
+				permission.kill();
+		
+				if (aFlag == false)
+				{
+					if (dScore /6 ==1 || dScore /6 ==2 || dScore /6 ==3) 
+					 {
+					      dpy++;
+					      dpx=0;
+					 }
+
+					pIncart = game.add.sprite((acart.body.position.x+42)+(31*dpx), acart.body.position.y+392 - (32 * dpy),currentApp.permissions['p'+(p-1).toString()].name);
+					dScore +=1;
+					dpx++;		   
+					//pIncart = game.add.sprite(dcart.body.position.x+50, dcart.body.position.y-50,currentApp.permissions['p'+(p-1).toString()].name);
+					game.physics.arcade.enable(pIncart);
+					pIncart.enableBody = true;
+					pIncart.body.mass = 50;
+			
+					pIncart.scale.x -= 0.6;
+					pIncart.scale.y -= 0.6;
+			
+					dScoreText.text = 'Denied: ' + dScore; 
+					allowed.visible = false;
+					denied.text = currentApp.permissions['p'+(p-1).toString()].name + ' permission denied!';
+					denied.visible = true;		   
+				}
+				else if (aFlag==true)
+				{
+			
+		
+					//pIncart = game.add.sprite(acart.body.position.x+50, acart.body.position.y-50,currentApp.permissions['p'+(p-1).toString()].name);
+					if (aScore /6 ==1 || aScore /6 ==2 || aScore /6 ==3) 
+					{
+						 py++;
+						 px=0;
+					}
+
+					pIncart = game.add.sprite((acart.body.position.x+42)+(31*px), acart.body.position.y+82 - (32 * py),currentApp.permissions['p'+(p-1).toString()].name);
+					aScore +=1;
+					px++;
+					game.physics.arcade.enable(pIncart);
+					//pIncart.body.collideWorldBounds = true; 
+					pIncart.enableBody = true;
+					pIncart.body.mass = 50;
+					//pIncart.body.gravity.y = 400;
+					pIncart.body.friction = 500;
+			
+					pIncart.scale.x -= 0.6;
+					pIncart.scale.y -= 0.6;
+			
+			
+					aScoreText.text = 'Allowed: ' + aScore; 
+					denied.visible = false;
+					allowed.text = currentApp.permissions['p'+(p-1).toString()].name + ' permission allowed!';
+					allowed.visible = true;
+		
+                
+				}
+		
+			}
+			else if (permission.body.position.x > 270)
+			{
+				rect.visible = false;
+				if (permission.scale.x <0.5)
+				{
+					permission.scale.x += 0.1;
+					permission.scale.y += 0.1;
+				}
+		
+				desc.text = "";
+				permission.body.position.y = game.world.height - 385;
+				permission.body.velocity.x =200;
+			}
+			else
+			{		
+				permission.body.velocity.x =100;
+			}
+
+		}
+		else if (permission.exists == false && pIncart.body.velocity.y ==0) 
+		{
+	      
+	      //alert(currentApp.permissions['p'+p.toString()].name);
+			allowed.visible = false;
+			denied.visible = false;
+
+			if (p>plength)
+			{
+			
+				var emptycart = game.add.sprite(acart.body.position.x+42,acart.body.position.y-24,'bg1');
+				emptycart.scale.x += 0.1;
+				emptycart.scale.y -= 0.1;
+				var emptycart1 = game.add.sprite(dcart.body.position.x+42,dcart.body.position.y,'bg1');
+				emptycart1.scale.x += 0.1;
+				emptycart1.scale.y -= 0.25;		
+				app++;
+				px=0;
+				py=0;
+				dpx=0;
+				dpy=0;
+				currentApp = game.apps[app.toString()];
+				p=1;
+				plength = currentApp.plength;
+				aScoreText.text = "Allowed : 0";
+				dScoreText.text = "Denied : 0";
+				aScore =0;
+				dScore =0;
+				appIcon.kill();
+				appTitle.text = "";
+				appIcon =game.add.sprite(200,15,game.apps[app.toString()].name);
+				appIcon.scale.x -=0.3;
+				appIcon.scale.y -=0.3;
+				appTitle = game.add.text(260,30,currentApp.name + " Application",{ font: 'bold 16px Arial', fill: '#ffffff' , wordWrap:'true', wordWrapWidth: '300', align: 'center'});
+				gameStart= game.add.sprite(0, 0, 'bg');
+				startText = game.add.text(300, 150, 'Game Finished!', { font: 'normal 30px Arial', fill: '#FFFFFF', align: 'center' });
+				startTextHint = game.add.text(300, 190, 'Click to go to next application', { font: 'normal 15px Arial', fill: '#FFFFFF', align: 'center' });  
+				gameStart.scale.setTo(3, 2);
+				gameStart.inputEnabled = true;
+				gameStart.input.useHandCursor = true;
+				gameStart.events.onInputDown.add(beginGame, this);
+		
+			}
+		
+			if(gameStart.exists == false)
+			{
+				permission = game.add.sprite(0, game.world.height - 385,currentApp.permissions['p'+p.toString()].name);
+				permission.scale.x -= 0.5;
+				permission.scale.y -= 0.5;		
+				game.physics.arcade.enable(permission);
+		
+			       
+				permission.inputEnabled=true; 
+				permission.input.useHandCursor = true; //if you want a hand cursor  
+				p++;
+			}
+		//allowed.visible = false;
+		//denied.visible = false;
+	
+		}
+    //  Reset the players velocity (movement)
+		player.body.velocity.x = 0;
+		if (cursors.left.isDown)
+		{	    
+		    //player.body.velocity.x = -150;	    
+		}
+		else if (cursors.right.isDown)	    
+		{	    
+		   // player.body.velocity.x = 150;	    
+		}		else if (cursors.up.isDown && permission.body.velocity.x ==0)
+		{
+	    
+		    
+			$.post("send1.php",
+			{
+				UserID: 'user1',//game.userId,
+				GroupID: '2',
+				AppID:currentApp.name,
+				PermissionName: currentApp.permissions['p'+(p-1).toString()].name,
+				PermissionType: currentApp.permissions['p'+(p-1).toString()].required == true ? "Required" : "Extended",
+				PermissionSize: '0.3',
+				Decision: 'Allowed'
+			},
+			function(data,status){
+	    
+			});
+			
+			permissionAllow();
+	    
+		}
+		else if (cursors.down.isDown && permission.body.velocity.x ==0 )	    
+		{
+	
+	
+			$.post("send1.php",
+			{
+				UserID: 'user1',//game.userId,
+				GroupID: '2',
+				AppID:currentApp.name,
+				PermissionName: currentApp.permissions['p'+(p-1).toString()].name,
+				PermissionType: currentApp.permissions['p'+(p-1).toString()].required == true ? "Required" : "Extended",
+				PermissionSize: '0.2',
+				Decision: 'Denied'
+			},
+			function(data,status){
+	    
+		 	});
+	                permissionDeny();
+		}
+		else
+		{	    
+		  player.body.velocity.x = 0;	    	    
+		}
+        }
+	function beginGame()
+	{
+		if(gameStart.exists == true)// && cursors.ENTER.isDown
+		{
+			gameStart.kill();
+			startTextHint.text = "";
+			startText.text = "";	
+		}
+	}
+
+	function permissionClick()
+	{
+		// permission.body.velocity.x=0;
+	       
+		permission.body.position.x = 320;
+		permission.body.position.y =  game.world.height - 385;
+		permission.body.velocity.x = 60;
+		dScoreText.text = 'Denied: ' + dScore;
+		allowed.visible = false;
+		denied.text = currentApp.permissions['p'+(p-1).toString()].name + ' permission denied!';
+		denied.visible = true;
+
+	}
+
+	function permissionDeny()
+	{
+		// permission.body.velocity.x=0;
+		permission.body.position.x = 600;
+		permission.body.position.y =  game.world.height - 385;
+		permission.body.velocity.x = 60;	     
+		dScoreText.text = 'Denied: ' + dScore;
+		allowed.visible = false;
+		denied.text = currentApp.permissions['p'+(p-1).toString()].name + ' permission denied!';
+		denied.visible = true;
+	        aFlag =false;
+	}
+	function permissionAllow()
+	{
+		// permission.body.velocity.x=0;
+		permission.body.position.x = 600;
+		permission.body.position.y =  game.world.height - 385;
+		permission.body.velocity.x = 60;
+	     
+		aScoreText.text = 'Allowed: ' + aScore;
+
+		denied.visible = false;
+		allowed.text = currentApp.permissions['p'+(p-1).toString()].name + ' permission allowed!';
+		allowed.visible = true;
+		aFlag = true;
+
+	}
+
+
+</script>
+
+</body>
+</html>
